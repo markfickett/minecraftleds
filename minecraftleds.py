@@ -1,3 +1,15 @@
+base_dir = os.path.dirname(__file__)
+# Expect to be in the Arduino sketchbook, where DataReceiver is a library.
+sys.path.append(
+    os.path.abspath(
+        os.path.join(base_dir, '..', 'libraries', 'DataReceiver)))
+# Use `git submodule update --init` if the submodule is empty.
+sys.path.append(os.path.join(base_dir, 'minecraftstatus'))
+
+
+import time
+from mcstatus import McServer
+from DataSender import Sender
 
 
 _KNOWN_PLAYERS = frozenset((
@@ -7,9 +19,26 @@ _KNOWN_PLAYERS = frozenset((
   'markfickett',
 ))
 _UNKNOWN_PLAYER = 'other'
+_AVAILABLE = 'available'
 
 
 if __name__ == '__main__':
-  get a Minecraft server status object
-  update every N seconds
-  write true/false for every player name
+  server = McServer('naib.markfickett.com')
+  sender = Sender('/dev/ttyACM0')
+
+  with sender:
+    sender.waitForReady()
+    try:
+      while True:
+        time.sleep(5.0)
+        server.Update()
+        status = {
+            name: name in server.player_names_sample
+            for name in _KNOWN_PLAYERS}
+        status[_UNKNOWN_PLAYER] = bool(
+            server.player_names_sample - _KNOWN_PLAYERS)
+        status[_AVAILABLE] = server.available
+        sender.send(**status)
+        sender.readAndPrint()
+  except KeyboardInterrupt:
+    pass
