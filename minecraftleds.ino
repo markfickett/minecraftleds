@@ -2,7 +2,11 @@
 #include <array>
 #include <string>
 
-#define NUM_KEYS 5
+#define NUM_KEYS 6
+#define NUM_FIGURES 5
+#define UNAVAILABLE_BLINK_PERIOD_MS 1000*3
+#define ONLINE_DELAY_MS 1000*5
+#define OFFLINE_DELAY_MS 1000*5
 
 DataReceiver<NUM_KEYS> receiver;
 
@@ -13,9 +17,11 @@ class FigureLight {
   private:
     const int pinRed, pinGreenBluePwm;
     bool available, online;
+    unsigned long onlineChangedMs;
   public:
     FigureLight(int i_pinRed, int i_pinGreenBluePwm) :
-        pinRed(i_pinRed), pinGreenBluePwm(i_pinGreenBluePwm), online(false) {}
+        pinRed(i_pinRed), pinGreenBluePwm(i_pinGreenBluePwm),
+        online(false), available(false), onlineChangedMs(0) {}
 
     void setup() {
       pinMode(pinRed, OUTPUT);
@@ -33,20 +39,32 @@ class FigureLight {
      * @param value A null-terminated stringification of a Python boolean.
      */
     void operator()(const char* value) {
-      online = strcmp(TRUE_STRING, value) == 0;
+      bool nowOnline = strcmp(TRUE_STRING, value) == 0;
+      if (online != nowOnline) {
+        onlineChangedMs = millis();
+      }
+      online = nowOnline;
     }
 
     /**
      * Updates the output LEDs based on server availability and whether the
      * player is online.
      */
-    void update() {
-      digitalWrite(pinRed, online ? HIGH: LOW);
-      digitalWrite(pinGreenBluePwm, online ? HIGH: LOW);
+    void update(unsigned long t) {
+      if (available) {
+        digitalWrite(pinGreenBluePwm, online ? HIGH: LOW);
+        bool redOn =
+            (online && (t > onlineChangedMs + ONLINE_DELAY_MS)) ||
+            (!online && (t < onlineChangedMs + OFFLINE_DELAY_MS));
+        digitalWrite(pinRed, redOn ? HIGH: LOW);
+      } else {
+        digitalWrite(
+            pinRed,
+            (((millis() / UNAVAILABLE_BLINK_PERIOD_MS) % 2) == 0) ? HIGH: LOW);
+        digitalWrite(pinGreenBluePwm, LOW);
+      }
     }
 };
-
-#define NUM_FIGURES 5
 
 FigureLight capy(3, 4);
 void capyCb(size_t size, const char* value) { capy(value); }
@@ -82,7 +100,8 @@ void setup() {
 
 void loop() {
   receiver.readAndUpdate();
+  unsigned long t = millis();
   for (int i = 0; i < NUM_FIGURES; i++) {
-    allFigures[i]->update();
+    allFigures[i]->update(t);
   }
 }
