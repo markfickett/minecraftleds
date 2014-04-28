@@ -52,7 +52,8 @@ class FigureLight {
      */
     void update(unsigned long t) {
       if (available) {
-        digitalWrite(pinGreenBluePwm, online ? HIGH: LOW);
+        //sin(.5 * pi * t / TIME_TO_MAX) => rises from 0 to 1 in TIME_TO_MAX
+        analogWrite(pinGreenBluePwm, online ? 255: 0);
         bool redOn =
             (online && (t > onlineChangedMs + ONLINE_DELAY_MS)) ||
             (!online && (t < onlineChangedMs + OFFLINE_DELAY_MS));
@@ -61,7 +62,7 @@ class FigureLight {
         digitalWrite(
             pinRed,
             (((millis() / UNAVAILABLE_BLINK_PERIOD_MS) % 2) == 0) ? HIGH: LOW);
-        digitalWrite(pinGreenBluePwm, LOW);
+        analogWrite(pinGreenBluePwm, 0);
       }
     }
 };
@@ -90,12 +91,15 @@ void availableCb(size_t size, const char* value) {
 void setup() {
   receiver.setup();
   receiver.addKey("CapybaraRancher", &capyCb);
-  receiver.addKey("WickedHound", &wickCb);
+  receiver.addKey("Wickedhound", &wickCb);
   receiver.addKey("krc23", &krcCb);
   receiver.addKey("markfickett", &markCb);
   receiver.addKey("other", &otherCb);
   receiver.addKey("available", &availableCb);
   receiver.sendReady();
+  for (int i = 0; i < NUM_FIGURES; i++) {
+    allFigures[i]->setup();
+  }
 }
 
 void loop() {
