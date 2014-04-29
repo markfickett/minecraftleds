@@ -26,11 +26,11 @@ _AVAILABLE = 'available'
 
 if __name__ == '__main__':
   server = McServer('naib')
-  sender = Sender('/dev/tty.usbmodem12341', startReady=True, expectAcks=False)
+  sender = Sender('/dev/tty.usbmodem12341', startReady=True, readTimeout=0.05)
 
   try:
     while True:
-      time.sleep(5.0)
+      time.sleep(1.0)
       server.Update()
       status = {
           name: name in server.player_names_sample
