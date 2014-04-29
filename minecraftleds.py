@@ -4,6 +4,7 @@ import time
 
 base_dir = os.path.dirname(__file__)
 # Expect to be in the Arduino sketchbook, where DataReceiver is a library.
+# https://github.com/markfickett/datareceiver
 sys.path.append(
     os.path.abspath(
         os.path.join(base_dir, '..', 'libraries', 'DataReceiver')))
