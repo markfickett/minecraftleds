@@ -29,18 +29,20 @@ if __name__ == '__main__':
   server = McServer('naib')
   sender = Sender('/dev/tty.usbmodem12341', startReady=True, readTimeout=0.05)
 
-  try:
-    while True:
-      time.sleep(1.0)
-      server.Update()
-      status = {
-          name: name in server.player_names_sample
-          for name in _KNOWN_PLAYERS}
-      status[_UNKNOWN_PLAYER] = bool(
-          server.player_names_sample - _KNOWN_PLAYERS)
-      status[_AVAILABLE] = server.available
-      with sender:
+  with sender:
+    try:
+      while True:
+        time.sleep(1.0)
+        server.Update()
+        status = {
+            name: name in server.player_names_sample
+            for name in _KNOWN_PLAYERS}
+        status[_UNKNOWN_PLAYER] = bool(
+            server.player_names_sample - _KNOWN_PLAYERS)
+        status[_AVAILABLE] = server.available
         sender.send(**status)
         sender.readAndPrint()
-  except KeyboardInterrupt:
-    pass
+    except KeyboardInterrupt:
+      fainal_status = {name: False for name in _KNOWN_PLAYERS}
+      fainal_status[_UNKNOWN_PLAYER] = False
+      sender.send(**fainal_status)
