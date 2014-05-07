@@ -7,6 +7,9 @@
 #define UNAVAILABLE_BLINK_PERIOD_MS 1000*3
 #define ONLINE_DELAY_MS 1000*5
 #define OFFLINE_DELAY_MS 1000*5
+#define ONLINE_RISE_MS 200
+#define ONLINE_PULSE_MS 2000
+#define ONLINE_PULSE_AMPLITUDE 50
 
 DataReceiver<NUM_KEYS> receiver;
 
@@ -51,12 +54,23 @@ class FigureLight {
      * player is online.
      */
     void update(unsigned long t) {
+      unsigned long onlineChangeT = (t - onlineChangedMs);
       if (available) {
-        //sin(.5 * pi * t / TIME_TO_MAX) => rises from 0 to 1 in TIME_TO_MAX
-        analogWrite(pinGreenBluePwm, online ? 255: 0);
+        float brightness;
+        if (onlineChangeT < ONLINE_RISE_MS) {
+          // Rises from 0 at onlineChangedMs to 1 at ONLINE_RISE_MS.
+          brightness = 255 * sin(HALF_PI * onlineChangeT / ONLINE_RISE_MS);
+        } else {
+          // Picks up at ONLINE_RISE_MS with a slower pulse.
+          brightness = 255 + ONLINE_PULSE_AMPLITUDE * (
+              cos(PI * (onlineChangeT - ONLINE_RISE_MS) / ONLINE_PULSE_MS)
+              - 1);
+        }
+        analogWrite(pinGreenBluePwm, online ? (unsigned int)brightness: 0);
+
         bool redOn =
-            (online && (t > onlineChangedMs + ONLINE_DELAY_MS)) ||
-            (!online && (t < onlineChangedMs + OFFLINE_DELAY_MS));
+            (online && (onlineChangeT > ONLINE_DELAY_MS)) ||
+            (!online && (onlineChangeT < OFFLINE_DELAY_MS));
         digitalWrite(pinRed, redOn ? HIGH: LOW);
       } else {
         digitalWrite(
