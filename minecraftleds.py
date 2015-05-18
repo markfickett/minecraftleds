@@ -12,7 +12,7 @@ sys.path.append(
 sys.path.append(os.path.join(base_dir, 'minecraftstatus'))
 
 from mcstatus import McServer
-from DataSender import Sender
+from data_sender import Sender
 
 
 _KNOWN_PLAYERS = frozenset((
@@ -27,7 +27,7 @@ _AVAILABLE = 'available'
 
 if __name__ == '__main__':
   server = McServer('naib')
-  sender = Sender('/dev/tty.usbmodem12341', startReady=True, readTimeout=0.05)
+  sender = Sender('/dev/ttyACM0', start_ready=True, read_timeout=0.05)
 
   with sender:
     try:
@@ -40,9 +40,9 @@ if __name__ == '__main__':
         status[_UNKNOWN_PLAYER] = bool(
             server.player_names_sample - _KNOWN_PLAYERS)
         status[_AVAILABLE] = server.available
-        sender.send(**status)
-        sender.readAndPrint()
+        sender.Send(**status)
+        sender.ReadAndPrint()
     except KeyboardInterrupt:
-      fainal_status = {name: False for name in _KNOWN_PLAYERS}
-      fainal_status[_UNKNOWN_PLAYER] = False
-      sender.send(**fainal_status)
+      final_status = {name: False for name in _KNOWN_PLAYERS}
+      final_status[_UNKNOWN_PLAYER] = False
+      sender.Send(**final_status)
