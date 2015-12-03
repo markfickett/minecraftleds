@@ -25,6 +25,7 @@ _KNOWN_PLAYERS = frozenset((
 _UNKNOWN_PLAYER = 'other'
 _AVAILABLE = 'available'
 
+_SERIAL_DEVICE = '/dev/tty.usbmodem12341'
 _SERVER_ADDRESS = 'naib'
 
 
@@ -39,7 +40,7 @@ if __name__ == '__main__':
   logging.info(
       '%s is %savailable.', _SERVER_ADDRESS, '' if server.available else 'not')
 
-  sender = Sender('/dev/ttyACM0', start_ready=True, read_timeout=0.05)
+  sender = Sender(_SERIAL_DEVICE, start_ready=True, read_timeout=0.05)
 
   with sender:
     logging.info('Communicating with Arduino.')
